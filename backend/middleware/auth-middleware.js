@@ -124,7 +124,18 @@ const checkIfOwnerOfNote = async (req, res, next) =>{
         const {_id,email} = req.info;
         const noteID = req.params.id;
         const token = req.query.token;
+        
         const userNote = await Note.findOne({_id:noteID});
+        console.log(userNote)
+        if(!userNote){
+            return(
+                res.status(404)
+                .json({
+                    success:false,
+                    message: "Note not found!"
+                })
+            )
+        }
         if(_id && noteID){
             if(userNote.author.toString() === _id){
                 return next()
@@ -225,7 +236,15 @@ const checkIfOwnerOfNote = async (req, res, next) =>{
              message: "You do not have permission to view this note!"
         })
     }catch(err){
-        console.log(err);
+        if(err.name === 'CastError'){
+            return(
+                res.status(404)
+                .json({
+                    success: false,
+                    message: "Note does not exist!"
+                })
+            )
+        }
         res.status(500)
         .json({
             success: false,

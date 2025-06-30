@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { changePassword } = require("../controllers/settings-controller");
 const { checkIfUser, checkIfOwnerOfNote } = require("../middleware/auth-middleware");
-const { createNote, deleteNote, editNote, getAllNotes, getNote, getArchivedNotes, restoreNote, archiveNote, getAllTags,getAllNotesForTag, createNoteForTag, search, shareNote, addCommentForANote, getAllCommentsForANote, getNotifications, readNotifications, changePermission} = require("../controllers/notes-controller");
+const { createNote, deleteNote, editNote, getAllNotes, getNote, getArchivedNotes, restoreNote, archiveNote, getAllTags,getAllNotesForTag, createNoteForTag, search, shareNote, addCommentForANote, getAllCommentsForANote, getNotifications, readNotifications, changePermission, deleteTag} = require("../controllers/notes-controller");
 
 //GetNotifications
 router.get("/notifications", checkIfUser, getNotifications);
@@ -18,6 +18,8 @@ router.get("/all-notes/:tag",checkIfUser, getAllNotesForTag);
 
 //get a single Note
 router.get("/note/:id", checkIfUser, checkIfOwnerOfNote , getNote)
+
+router.delete("/tag/:tagName",checkIfUser, deleteTag)
 
 //get all archived Notes
 router.get("/archived-note", checkIfUser, getArchivedNotes);

@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const MessageSchema = new mongoose.Schema({
+    noteId:String,
+    profileImage:{
+        type:String,
+        default: null,
+    },
     otherUser:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'User',

@@ -23,6 +23,7 @@ const CollaboratorSchema = new Schema({
 const NoteSchema = new Schema({
     title: {type:String,required:true, trim:true},
     content: {type:String},
+    documentID: {type:String},//Will it have a default if none is given or a required Field
     author: {
         type: mongoose.Schema.Types.ObjectId, 
         ref:'User'

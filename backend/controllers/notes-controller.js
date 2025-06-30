@@ -125,7 +125,17 @@ const getNote = async (req, res) =>{
         let permission = "edit";
         let token = undefined;
         const profiles = [];
-
+        if(!noteId){
+            return(
+                res.status(404)
+                .json({
+                    status: false,
+                    message: "No NoteId!"
+                })
+            )
+        }
+        // let _note = await Note.findById(noteId);
+        // console.log(_note);
         let singleUserNote = await NoteStatus.find({noteID:noteId,authorID:_id}).populate({
             path: "notes",
             populate:{
@@ -136,12 +146,14 @@ const getNote = async (req, res) =>{
                     },
             }
         }).lean()
+        console.log(singleUserNote, "<__HERE")
         singleUserNote = singleUserNote.map(value=>{
-         return({
-            ...value.notes[0],
-            isArchived: value.isArchived
-         })
-       })
+            return({
+                ...value.notes[0],
+                isArchived: value.isArchived
+            })
+        })
+       
         //Get all the profiles 
         if(singleUserNote.length > 0){
             let author = await User.findOne({_id:singleUserNote[0].author})
@@ -211,7 +223,7 @@ const getNote = async (req, res) =>{
             };
         });
         //Get collaborators and authors of the notes ---Their profile.
-       
+
        if(singleUserNote){
          return(
             res
@@ -236,7 +248,7 @@ const getNote = async (req, res) =>{
          })
        )
     }catch(err){
-        console.log(err )
+        console.log("The errorr", err)
         res
         .status(500)
         .json({
@@ -380,7 +392,8 @@ const createNote = async (req, res) =>{
      * @property {String} author - Required; 
      */
     const {_id } = req.info;
-    const { title, tags = [], content} = req.body;
+   
+    const { title, tags = [], content, documentID} = req.body;
     if(!title){
         return(
             res
@@ -396,7 +409,8 @@ const createNote = async (req, res) =>{
         const userNote = await Note.create({
             title: title,
             content: content,
-            author: _id
+            author: _id,
+            documentID: documentID
         })
 
         //Create Status Relation
@@ -416,7 +430,7 @@ const createNote = async (req, res) =>{
                     tag = await Tag.create({name:tagName,author:_id});
                 }
                 if(tag && tag.author !== _id){
-                    tag = await tag.findByIdAndUpdate(tag._id,{
+                    tag = await Tag.findByIdAndUpdate(tag._id,{
                         $addToSet:{
                             coAuthors:{
                                 owner:_id
@@ -475,7 +489,7 @@ const deleteNote = async (req, res) =>{
         const {_id,email} = req.info;
         const id = req.params.id;
         const note = await Note.findById(id);
-        if(!id){
+        if(!id && !note){
             return(
                 res
                 .status(404)
@@ -485,7 +499,6 @@ const deleteNote = async (req, res) =>{
                 })
             ) 
         }
-       
         const isAuthor = note.author.toString() === _id.toString();
         const isCollaborator = note.collaborators.some(
         (c) => c.author.toString() === _id.toString()
@@ -581,13 +594,11 @@ const editNote = async (req, res) =>{
         const updatedUserNote = await Note.findByIdAndUpdate(noteId,{$set:updatedFields}, {new:true});
       
         // This related tags is for when the user has added a new tag.
-        console.log(relatedTags, "In edit Notes...")
         if(relatedTags.length > 0){
             for (const tagName of relatedTags) {
                 // Check if the tag already exists
                 let existingTag = await Tag.findOne({name:{$regex:`^${tagName}$`,$options:'i'}});
                 if(!existingTag){
-                    console.log(tagName)
                      existingTag = await Tag.create({
                          name: tagName,
                          author: _id
@@ -640,7 +651,7 @@ const editNote = async (req, res) =>{
                     id: tag.tagId._id,
                     name: tag.tagId.name,
                 }));
-              
+              console.log(tags)
             // I will return an array here
             return(
                 res
@@ -825,7 +836,6 @@ const getAllTags = async (req, res) =>{
         data:tags
       })
     }catch(error){
-        console.log("Errorhjhjh",error)
         res
         .status(500)
         .json({
@@ -910,7 +920,6 @@ const addCommentForANote = async(req, res) =>{
                     }
                 }
             }, {new: true})
-            console.log(comment)
         }
 
         if(comment){
@@ -940,7 +949,16 @@ const getAllCommentsForANote = async(req, res) =>{
         const {_id} = req.info;
         const{ id } = req.params;
         const comments = await Comment.findOne({note:id}).lean();
-         
+        if(!comments){
+            return(
+                res.status(200)
+                .json({
+                    success: true,
+                    message: "No comments on this note!",
+                    data: []
+                })
+            )
+        }
         for(const user of comments.userComment){
             const profile = await User.findOne({_id:user.user});
             user.username = profile.username
@@ -1129,6 +1147,37 @@ const changePermission = async(req,res) =>{
   }
 }
 
+const deleteTag = async(req, res)=>{
+    try{
+        const {_id} = req.info
+        const tagName = req.params.tagName;
+        const tag = await Tag.findOne({name:tagName});
+        if(tag){
+            const userTag = await NoteStatus.findOneAndDelete({authorID:_id,tagId:tag._id})
+            //What if it is the only user that is connected to this tag.
+            const UserTags = await NoteStatus.find({tagId:tag._id});
+            if(!UserTags.length){
+                 await Tag.findByIdAndDelete(tag._id)
+            }
+            if(userTag){
+                return(
+                    res.status(200)
+                    .json({
+                        success: false,
+                        message: "Tag has been deleted"
+                    })
+                )
+            }
+        }
+    }catch(err){
+        console.log(err)
+        return res.status(500).json({
+        success: false,
+        message: 'Server error. Please try again later!',
+        });
+    }
+}
+
 module.exports = {
     search,
     getAllTags,
@@ -1142,6 +1191,7 @@ module.exports = {
      createNote,
      editNote,
      deleteNote,
+     deleteTag,
      shareNote,
      addCommentForANote,
      getAllCommentsForANote,
