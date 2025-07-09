@@ -949,7 +949,7 @@ const getAllCommentsForANote = async(req, res) =>{
         const {_id} = req.info;
         const{ id } = req.params;
         const comments = await Comment.findOne({note:id}).lean();
-        if(!comments && (comments.userComment.length === 0)){
+        if(!comments || !('userComment' in comments) || ('userComment' in comments) && (comments.userComment.length == 0)){
             return(
                 res.status(200)
                 .json({
