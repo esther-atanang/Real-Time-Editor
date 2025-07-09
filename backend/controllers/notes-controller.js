@@ -949,7 +949,7 @@ const getAllCommentsForANote = async(req, res) =>{
         const {_id} = req.info;
         const{ id } = req.params;
         const comments = await Comment.findOne({note:id}).lean();
-        if(!comments){
+        if(!comments && (comments.userComment.length === 0)){
             return(
                 res.status(200)
                 .json({
@@ -959,6 +959,7 @@ const getAllCommentsForANote = async(req, res) =>{
                 })
             )
         }
+
         for(const user of comments.userComment){
             const profile = await User.findOne({_id:user.user});
             user.username = profile.username
