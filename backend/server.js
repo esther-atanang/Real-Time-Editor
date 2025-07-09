@@ -5,7 +5,7 @@ require("./db/index");
 const Note = require("./model/Note")
 const Comment = require("./model/Comment");
 const {hocuspocus} = require('./config/hocuspocus')
-const PORT = 3002;
+const PORT = process.env.PORT;
 const authRoutes = require("./routes/auth-routes")
 const dashboardRoutes = require("./routes/dashboard-routes");
 const cors = require("cors");
