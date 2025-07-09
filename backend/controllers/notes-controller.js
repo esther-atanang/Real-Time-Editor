@@ -977,6 +977,7 @@ const getAllCommentsForANote = async(req, res) =>{
         res.status(500)
         .json({
             success:false,
+            err: err,
             message: "Server error, Please try again later!"
         });
     }

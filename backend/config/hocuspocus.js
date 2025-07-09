@@ -4,7 +4,6 @@ const {client, removeUsers} = require('../config/redis-config')
 const User = require("../model/User");
 const Note = require("../model/Note");
 const jwt = require("jsonwebtoken");
-const mongoose = require('mongoose');
 
 
 

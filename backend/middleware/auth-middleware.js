@@ -112,6 +112,7 @@ const checkIfUser = async (req,res, next) =>{
         console.log("Error",err);
         res.status(500)
         .json({
+            err:err,
             success: false,
             message: "Something went wrong, Please try again later."
         });
